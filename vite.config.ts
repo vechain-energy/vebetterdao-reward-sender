@@ -21,6 +21,19 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['mersenne-twister']
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       'http': 'vite-plugin-node-polyfills/polyfills/http',
