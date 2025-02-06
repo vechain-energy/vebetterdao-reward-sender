@@ -32,4 +32,5 @@ export default defineConfig({
       'crypto': 'vite-plugin-node-polyfills/polyfills/crypto',
     },
   },
+  base: process.env.BASE_PATH || '/',
 });
