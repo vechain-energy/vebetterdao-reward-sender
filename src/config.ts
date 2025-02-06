@@ -1,14 +1,14 @@
 // Network Configuration
 export const NETWORK = {
-  NODE_URL: 'https://testnet.vechain.org/',
-  GENESIS: 'test' as const,
-  EXPLORER_URL: 'https://explore-testnet.vechain.org',
+  NODE_URL: 'https://mainnet.vechain.org/',
+  GENESIS: 'main' as const,
+  EXPLORER_URL: 'https://vechainstats.com',
 } as const;
 
 // Token Configuration
 export const TOKEN = {
   B3TR_ICON_URL: 'https://vechain.github.io/token-registry/assets/3d55edb42b09a634f7f2f26756a02571de901a5b.png',
-  CONTRACT_ADDRESS: '0x0000000000000000000000000000000000000000',
+  CONTRACT_ADDRESS: '0x6Bee7DDab6c99d5B2Af0554EaEA484CE18F52631',
 } as const;
 
 // API Configuration

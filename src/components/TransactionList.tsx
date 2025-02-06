@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Transaction } from '../types';
 import clsx from 'clsx';
+import { NETWORK } from '../config';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -38,7 +39,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
               </p>
             </div>
             <a
-              href={`https://explore-testnet.vechain.org/transactions/${tx.id}`}
+              href={`${NETWORK.EXPLORER_URL}/transaction/${tx.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-sm"
