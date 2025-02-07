@@ -47,7 +47,7 @@ export function useRewardDistribution() {
   ): Promise<boolean> => {
     const batch = csvData.slice(startIndex, startIndex + TRANSACTION.BATCH_SIZE);
     const batchAmount = batch.reduce((sum, row) => sum + parseFloat(row.amount), 0);
-    
+
     setPendingTransaction({
       addresses: batch.length,
       amount: batchAmount,
@@ -64,17 +64,17 @@ export function useRewardDistribution() {
             { "name": "receiver", "type": "address" },
             { "name": "reason", "type": "string" }
           ],
-          "name": "distributeReward",
+          "name": "distributeRewardDeprecated",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
         })
-        .asClause(
-          selectedAppId,
-          (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString(),
-          row.address,
-          row.reason
-        ),
+          .asClause(
+            selectedAppId,
+            (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString(),
+            row.address,
+            JSON.stringify({ version: 2, description: row.reason })
+          ),
         comment: `${row.amount} B3TR for ${row.address} (${row.reason})`
       }));
 
@@ -114,7 +114,7 @@ export function useRewardDistribution() {
   const processAllBatches = async (csvData: CSVRow[], selectedAppId: string, startFromIndex = 0) => {
     setIsProcessing(true);
     setShowSuccess(false);
-    
+
     try {
       let currentIndex = startFromIndex;
       while (currentIndex < csvData.length) {
