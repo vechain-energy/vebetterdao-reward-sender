@@ -205,7 +205,7 @@ function App() {
           <div className="flex justify-between items-center mb-8">
             {selectedApp ? (
               <div className="flex items-center gap-3">
-                {selectedApp.metadata.logoUrl ? (
+                {selectedApp?.metadata?.logoUrl ? (
                   <img
                     src={convertIpfsUrl(selectedApp.metadata.logoUrl)}
                     alt=""

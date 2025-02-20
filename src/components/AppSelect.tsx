@@ -44,7 +44,7 @@ export function AppSelect({ apps, value, onChange }: AppSelectProps) {
         <div className="flex items-center gap-2">
           {selectedApp ? (
             <>
-              {selectedApp.metadata.logoUrl && (
+              {selectedApp?.metadata?.logoUrl && (
                 <img
                   src={convertIpfsUrl(selectedApp.metadata.logoUrl)}
                   alt=""
@@ -84,7 +84,7 @@ export function AppSelect({ apps, value, onChange }: AppSelectProps) {
                   app.id === value ? "bg-orange-50" : ""
                 )}
               >
-                {app.metadata.logoUrl && (
+                {app?.metadata?.logoUrl && (
                   <img
                     src={convertIpfsUrl(app.metadata.logoUrl)}
                     alt=""
