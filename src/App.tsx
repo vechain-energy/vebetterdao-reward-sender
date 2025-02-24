@@ -137,7 +137,7 @@ function App() {
     const processedRows = transactions.flatMap(tx => 
       tx.rows.map(rowIndex => ({
         ...csvData[rowIndex],
-        transaction: `https://explore-testnet.vechain.org/transactions/${tx.id}`
+        transaction: `https://vechainstats.com/transactions/${tx.id}`
       }))
     );
     
