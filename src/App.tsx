@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Upload, Download, FileDown, Users, Wallet, ArrowLeft, CircleDollarSign } from 'lucide-react';
+import { Upload, Download, FileDown, Users, ArrowLeft, CircleDollarSign } from 'lucide-react';
 import Papa from 'papaparse';
 import { CSVTable } from './components/CSVTable';
 import { ProgressBar } from './components/ProgressBar';
 import { AppSelect } from './components/AppSelect';
-import { Modal } from './components/Modal';
+import { TokenSelect } from './components/TokenSelect';
 import { StatsCard } from './components/StatsCard';
 import { WizardStep } from './components/WizardStep';
 import { TransactionList } from './components/TransactionList';
@@ -13,6 +13,7 @@ import { SuccessScreen } from './components/SuccessScreen';
 import { ConnectWallet } from './components/ConnectWallet';
 import { Background } from './components/Background';
 import { useApps } from './hooks/useApps';
+import { useTokens } from './hooks/useTokens';
 import { useRewardDistribution } from './hooks/useRewardDistribution';
 import { CSVRow } from './types';
 import { useWallet } from '@vechain/dapp-kit-react';
@@ -24,8 +25,8 @@ import Footer from './components/Footer';
 function App() {
   const { account } = useWallet();
   const { apps } = useApps();
+  const { tokens } = useTokens();
   const {
-    isProcessing,
     progress,
     transactions,
     pendingTransaction,
@@ -40,10 +41,12 @@ function App() {
   const [currentStep, setCurrentStep] = useState(1);
   const [csvData, setCsvData] = useState<CSVRow[]>([]);
   const [selectedAppId, setSelectedAppId] = useState('');
+  const [selectedTokenAddress, setSelectedTokenAddress] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
   const selectedApp = apps.find(app => app.id === selectedAppId);
+  const selectedToken = tokens.find(token => token.address === selectedTokenAddress);
 
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -53,8 +56,11 @@ function App() {
       Papa.parse(file, {
         complete: (result) => {
           const data = result.data
-            .filter((row: any) => row.address && row.amount && row.reason)
-            .map((row: any) => ({
+            .filter((row: unknown): row is Record<string, string> => {
+              const r = row as Record<string, string>;
+              return !!r.address && !!r.amount && !!r.reason;
+            })
+            .map((row: Record<string, string>) => ({
               address: row.address,
               amount: row.amount,
               reason: row.reason,
@@ -83,8 +89,11 @@ function App() {
       Papa.parse(file, {
         complete: (result) => {
           const data = result.data
-            .filter((row: any) => row.address && row.amount && row.reason)
-            .map((row: any) => ({
+            .filter((row: unknown): row is Record<string, string> => {
+              const r = row as Record<string, string>;
+              return !!r.address && !!r.amount && !!r.reason;
+            })
+            .map((row: Record<string, string>) => ({
               address: row.address,
               amount: row.amount,
               reason: row.reason,
@@ -114,7 +123,8 @@ function App() {
   };
 
   const handleSendRewards = async () => {
-    if (!account || !selectedAppId || csvData.length === 0) return;
+    if (!account || (!selectedAppId && !selectedTokenAddress) || csvData.length === 0) return;
+    
     setCurrentStep(5);
     setProgress({
       processedAddresses: 0,
@@ -125,12 +135,22 @@ function App() {
     setTransactions([]);
     setPendingTransaction(null);
     setShowSuccess(false);
-    await processAllBatches(csvData, selectedAppId);
+    
+    const appId = selectedTokenAddress || selectedAppId;
+    const tokenSymbol = selectedToken?.symbol;
+    const isTokenTransfer = !!selectedTokenAddress;
+    
+    await processAllBatches(csvData, appId, tokenSymbol, 0, isTokenTransfer);
   };
 
   const handleRetryTransaction = async () => {
     if (!pendingTransaction) return;
-    await processAllBatches(csvData, selectedAppId, pendingTransaction.startIndex);
+    
+    const appId = selectedTokenAddress || selectedAppId;
+    const tokenSymbol = selectedToken?.symbol;
+    const isTokenTransfer = !!selectedTokenAddress;
+    
+    await processAllBatches(csvData, appId, tokenSymbol, pendingTransaction.startIndex, isTokenTransfer);
   };
 
   const handleDownloadCSV = () => {
@@ -162,16 +182,16 @@ function App() {
   }, [account]);
 
   useEffect(() => {
-    if (account && selectedAppId) {
+    if (account && (selectedAppId || selectedTokenAddress)) {
       setCurrentStep(3);
     }
-  }, [selectedAppId, account]);
+  }, [selectedAppId, selectedTokenAddress, account]);
 
   useEffect(() => {
-    if (account && selectedAppId && csvData.length > 0) {
+    if (account && (selectedAppId || selectedTokenAddress) && csvData.length > 0) {
       setCurrentStep(4);
     }
-  }, [csvData, account, selectedAppId]);
+  }, [csvData, account, selectedAppId, selectedTokenAddress]);
 
   useEffect(() => {
     if (showSuccess) {
@@ -203,7 +223,27 @@ function App() {
 
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            {selectedApp ? (
+            {selectedToken ? (
+              <div className="flex items-center gap-3">
+                {selectedToken.icon ? (
+                  <img
+                    src={`https://vechain.github.io/token-registry/assets/${selectedToken.icon}`}
+                    alt=""
+                    className="w-10 h-10 rounded-full"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <CircleDollarSign className="w-6 h-6 text-orange-400" />
+                  </div>
+                )}
+                <h1 className="text-3xl font-bold text-white">
+                  {selectedToken.name} ({selectedToken.symbol})
+                </h1>
+              </div>
+            ) : selectedApp ? (
               <div className="flex items-center gap-3">
                 {selectedApp?.metadata?.logoUrl ? (
                   <img
@@ -235,12 +275,34 @@ function App() {
             </div>
           </WizardStep>
 
-          <WizardStep step={2} currentStep={currentStep} title="Select Application">
-            <AppSelect
-              apps={apps}
-              value={selectedAppId}
-              onChange={setSelectedAppId}
-            />
+          <WizardStep step={2} currentStep={currentStep} title="Select Application or Token">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-white text-lg font-semibold mb-2">Select Application</h3>
+                <p className="text-white/70 mb-4 text-sm">Choose an application to distribute rewards to</p>
+                <AppSelect
+                  apps={apps}
+                  value={selectedAppId}
+                  onChange={(value) => {
+                    setSelectedAppId(value);
+                    setSelectedTokenAddress('');
+                  }}
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-white/10">
+                <h3 className="text-white text-lg font-semibold mb-2">Select Token</h3>
+                <p className="text-white/70 mb-4 text-sm">Or choose a token to distribute</p>
+                <TokenSelect
+                  tokens={tokens}
+                  value={selectedTokenAddress}
+                  onChange={(value) => {
+                    setSelectedTokenAddress(value);
+                    setSelectedAppId('');
+                  }}
+                />
+              </div>
+            </div>
           </WizardStep>
 
           <WizardStep step={3} currentStep={currentStep} title="Upload CSV">
@@ -289,14 +351,25 @@ function App() {
                 <StatsCard
                   icon={
                     <div className="bg-orange-500/20 rounded-full p-0">
-                      <img 
-                        src={TOKEN.B3TR_ICON_URL} 
-                        alt="B3TR"
-                        className="w-14 h-14"
-                      />
+                      {selectedToken ? (
+                        <img 
+                          src={`https://vechain.github.io/token-registry/assets/${selectedToken.icon}`}
+                          alt={selectedToken.symbol}
+                          className="w-14 h-14"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <img 
+                          src={TOKEN.B3TR_ICON_URL}
+                          alt="B3TR"
+                          className="w-14 h-14"
+                        />
+                      )}
                     </div>
                   }
-                  label="Total B3TR"
+                  label={selectedToken ? `Total ${selectedToken.symbol}` : "Total B3TR"}
                   value={totalAmount.toFixed(2)}
                 />
               </div>
@@ -311,24 +384,25 @@ function App() {
                   </div>
                   <button
                     onClick={handleSendRewards}
-                    disabled={!account || !selectedAppId}
+                    disabled={!account || (!selectedAppId && !selectedTokenAddress)}
                     className={clsx(
                       "px-4 py-2 rounded-lg",
                       "flex items-center gap-2",
-                      account && selectedAppId
+                      account && (selectedAppId || selectedTokenAddress)
                         ? "bg-orange-500 text-white hover:bg-orange-600"
                         : "bg-white/10 text-white/40 cursor-not-allowed"
                     )}
                   >
-                    Send Rewards
+                    {selectedToken ? 'Send Tokens' : 'Send Rewards'}
                     {!account && <span className="text-sm">(Connect Wallet)</span>}
-                    {!selectedAppId && <span className="text-sm">(Select App)</span>}
+                    {!selectedAppId && !selectedTokenAddress && <span className="text-sm">(Select App or Token)</span>}
                   </button>
                 </div>
                 <CSVTable
                   data={csvData}
                   globalFilter={searchTerm}
                   setGlobalFilter={setSearchTerm}
+                  tokenSymbol={selectedToken?.symbol || 'B3TR'}
                 />
               </div>
             </>
@@ -338,7 +412,9 @@ function App() {
             <>
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-white">Processing Rewards</h3>
+                  <h3 className="text-lg font-semibold text-white">
+                    {selectedToken ? 'Processing Token Transfers' : 'Processing Rewards'}
+                  </h3>
                   <button
                     onClick={() => setCurrentStep(4)}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-sm"
@@ -347,7 +423,7 @@ function App() {
                     Back to Review
                   </button>
                 </div>
-                <ProgressBar progress={progress} />
+                <ProgressBar progress={progress} tokenSymbol={selectedToken?.symbol} />
               </div>
 
               {pendingTransaction && (
@@ -355,6 +431,7 @@ function App() {
                   <PendingTransactionCard
                     transaction={pendingTransaction}
                     onRetry={handleRetryTransaction}
+                    tokenSymbol={selectedToken?.symbol}
                   />
                 </div>
               )}
@@ -371,7 +448,7 @@ function App() {
                       Download CSV
                     </button>
                   </div>
-                  <TransactionList transactions={transactions} />
+                  <TransactionList transactions={transactions} tokenSymbol={selectedToken?.symbol} />
                 </div>
               )}
             </>
@@ -382,6 +459,8 @@ function App() {
               totalAmount={totalAmount}
               totalUsers={uniqueAddresses}
               onDownload={handleDownloadCSV}
+              tokenSymbol={selectedToken?.symbol}
+              tokenIcon={selectedToken?.icon}
             />
           </WizardStep>
 

@@ -4,9 +4,10 @@ import clsx from 'clsx';
 
 interface ProgressBarProps {
   progress: TransactionProgress;
+  tokenSymbol?: string;
 }
 
-export function ProgressBar({ progress }: ProgressBarProps) {
+export function ProgressBar({ progress, tokenSymbol = 'B3TR' }: ProgressBarProps) {
   const percentage = (progress.processedAddresses / progress.totalAddresses) * 100;
 
   return (
@@ -50,7 +51,7 @@ export function ProgressBar({ progress }: ProgressBarProps) {
         />
       </div>
       <div className="mt-3 text-sm text-white/60">
-        Amount: {progress.processedAmount.toFixed(2)}/{progress.totalAmount.toFixed(2)} B3TR
+        Amount: {progress.processedAmount.toFixed(2)}/{progress.totalAmount.toFixed(2)} {tokenSymbol}
       </div>
     </div>
   );

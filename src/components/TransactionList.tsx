@@ -6,9 +6,10 @@ import { NETWORK } from '../config';
 
 interface TransactionListProps {
   transactions: Transaction[];
+  tokenSymbol?: string;
 }
 
-export function TransactionList({ transactions }: TransactionListProps) {
+export function TransactionList({ transactions, tokenSymbol = 'B3TR' }: TransactionListProps) {
   return (
     <div className="space-y-3">
       {transactions.map(tx => (
@@ -31,7 +32,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                   <AlertCircle className="w-5 h-5 text-red-400" />
                 )}
                 <span className={tx.status === 'success' ? "text-emerald-400" : "text-red-400"}>
-                  {tx.addresses} addresses • {tx.amount.toFixed(2)} B3TR
+                  {tx.addresses} addresses • {tx.amount.toFixed(2)} {tokenSymbol}
                 </span>
               </p>
               <p className="text-white/60 text-sm">

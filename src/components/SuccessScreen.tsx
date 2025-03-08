@@ -7,9 +7,11 @@ interface SuccessScreenProps {
   totalAmount: number;
   totalUsers: number;
   onDownload: () => void;
+  tokenSymbol?: string;
+  tokenIcon?: string;
 }
 
-export function SuccessScreen({ totalAmount, totalUsers, onDownload }: SuccessScreenProps) {
+export function SuccessScreen({ totalAmount, totalUsers, onDownload, tokenSymbol, tokenIcon }: SuccessScreenProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 backdrop-blur-lg p-8">
       <div className="absolute inset-0 bg-success-pattern opacity-5" />
@@ -25,11 +27,13 @@ export function SuccessScreen({ totalAmount, totalUsers, onDownload }: SuccessSc
         </div>
 
         <h3 className="text-3xl font-bold text-center bg-gradient-to-r from-emerald-400 to-emerald-500 bg-clip-text text-transparent mb-3">
-          Distribution Complete!
+          {tokenSymbol ? 'Token Transfer Complete!' : 'Distribution Complete!'}
         </h3>
         
         <p className="text-white/80 text-center mb-8 text-lg">
-          All rewards have been successfully distributed to your community
+          {tokenSymbol 
+            ? `All tokens have been successfully transferred to your community` 
+            : `All rewards have been successfully distributed to your community`}
         </p>
 
         <div className="grid grid-cols-2 gap-6 mb-8">
@@ -45,14 +49,34 @@ export function SuccessScreen({ totalAmount, totalUsers, onDownload }: SuccessSc
           <StatsCard
             icon={
               <div className="bg-emerald-500/20 rounded-full p-0">
-                <img 
-                  src={TOKEN.B3TR_ICON_URL} 
-                  alt="B3TR"
-                  className="w-14 h-14"
-                />
+                {tokenIcon ? (
+                  <img 
+                    src={`https://vechain.github.io/token-registry/assets/${tokenIcon}`}
+                    alt={tokenSymbol || "B3TR"}
+                    className="w-14 h-14"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('div');
+                        fallback.className = "w-14 h-14 flex items-center justify-center";
+                        const icon = document.createElement('div');
+                        icon.className = "w-10 h-10 text-emerald-400";
+                        parent.appendChild(fallback);
+                        fallback.appendChild(icon);
+                      }
+                    }}
+                  />
+                ) : (
+                  <img 
+                    src={TOKEN.B3TR_ICON_URL} 
+                    alt={tokenSymbol || "B3TR"}
+                    className="w-14 h-14"
+                  />
+                )}
               </div>
             }
-            label="Total B3TR"
+            label={`Total ${tokenSymbol || "B3TR"}`}
             value={totalAmount.toFixed(2)}
           />
         </div>

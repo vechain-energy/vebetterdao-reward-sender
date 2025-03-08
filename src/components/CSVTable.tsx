@@ -14,6 +14,7 @@ interface CSVTableProps {
   data: CSVRow[];
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
+  tokenSymbol?: string;
 }
 
 const columnHelper = createColumnHelper<CSVRow>();
@@ -23,64 +24,64 @@ const shortenAddress = (address: string) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
-const columns = [
-  columnHelper.accessor('address', {
-    header: ({ column }) => (
-      <button
-        className="flex items-center gap-2 text-white/80"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Address
-        <ArrowUpDown className="h-4 w-4" />
-      </button>
-    ),
-    cell: (info) => (
-      <a
-        href={`https://vechainstats.com/account/${info.getValue()}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-orange-400 hover:text-orange-300 flex items-center gap-1"
-      >
-        {shortenAddress(info.getValue())}
-        <ExternalLink className="h-3 w-3" />
-      </a>
-    ),
-  }),
-  columnHelper.accessor('amount', {
-    header: ({ column }) => (
-      <button
-        className="flex items-center gap-2 text-white/80"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Amount (B3TR)
-        <ArrowUpDown className="h-4 w-4" />
-      </button>
-    ),
-    cell: (info) => (
-      <span className="text-white/80">
-        {parseFloat(info.getValue()).toFixed(2)}
-      </span>
-    ),
-  }),
-  columnHelper.accessor('reason', {
-    header: ({ column }) => (
-      <button
-        className="flex items-center gap-2 text-white/80"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Reason
-        <ArrowUpDown className="h-4 w-4" />
-      </button>
-    ),
-    cell: (info) => (
-      <span className="text-white/80">
-        {info.getValue()}
-      </span>
-    ),
-  }),
-];
+export function CSVTable({ data, globalFilter, setGlobalFilter, tokenSymbol = 'B3TR' }: CSVTableProps) {
+  const columns = [
+    columnHelper.accessor('address', {
+      header: ({ column }) => (
+        <button
+          className="flex items-center gap-2 text-white/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Address
+          <ArrowUpDown className="h-4 w-4" />
+        </button>
+      ),
+      cell: (info) => (
+        <a
+          href={`https://vechainstats.com/account/${info.getValue()}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-orange-400 hover:text-orange-300 flex items-center gap-1"
+        >
+          {shortenAddress(info.getValue())}
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      ),
+    }),
+    columnHelper.accessor('amount', {
+      header: ({ column }) => (
+        <button
+          className="flex items-center gap-2 text-white/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Amount ({tokenSymbol})
+          <ArrowUpDown className="h-4 w-4" />
+        </button>
+      ),
+      cell: (info) => (
+        <span className="text-white/80">
+          {parseFloat(info.getValue()).toFixed(2)}
+        </span>
+      ),
+    }),
+    columnHelper.accessor('reason', {
+      header: ({ column }) => (
+        <button
+          className="flex items-center gap-2 text-white/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Reason
+          <ArrowUpDown className="h-4 w-4" />
+        </button>
+      ),
+      cell: (info) => (
+        <span className="text-white/80">
+          {info.getValue()}
+        </span>
+      ),
+    }),
+  ];
 
-export function CSVTable({ data, globalFilter, setGlobalFilter }: CSVTableProps) {
   const table = useReactTable({
     data,
     columns,

@@ -6,9 +6,10 @@ import clsx from 'clsx';
 interface PendingTransactionCardProps {
   transaction: PendingTransaction;
   onRetry: () => void;
+  tokenSymbol?: string;
 }
 
-export function PendingTransactionCard({ transaction, onRetry }: PendingTransactionCardProps) {
+export function PendingTransactionCard({ transaction, onRetry, tokenSymbol = 'B3TR' }: PendingTransactionCardProps) {
   return (
     <div className={clsx(
       "p-6 rounded-xl",
@@ -27,7 +28,7 @@ export function PendingTransactionCard({ transaction, onRetry }: PendingTransact
             {transaction.status === 'processing' ? 'Processing Batch' : 'Transaction Failed'}
           </h4>
           <p className="text-white/80">
-            {transaction.addresses} addresses • {transaction.amount.toFixed(2)} B3TR
+            {transaction.addresses} addresses • {transaction.amount.toFixed(2)} {tokenSymbol}
           </p>
           {transaction.error && (
             <p className="text-red-400/80 text-sm mt-2 font-medium">

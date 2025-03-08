@@ -19,6 +19,7 @@ export const API = {
 // Transaction Configuration
 export const TRANSACTION = {
   BATCH_SIZE: 50,
+  TOKEN_BATCH_SIZE: 200, // Larger batch size for token transfers
   MAX_RECEIPT_ATTEMPTS: 20,
   RECEIPT_POLL_INTERVAL: 3000, // 3 seconds
 } as const;

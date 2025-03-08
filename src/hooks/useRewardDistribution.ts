@@ -16,7 +16,7 @@ export function useRewardDistribution() {
   const [pendingTransaction, setPendingTransaction] = useState<PendingTransaction | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const waitForReceipt = async (txId: string): Promise<any> => {
+  const waitForReceipt = async (txId: string): Promise<Record<string, unknown>> => {
     return new Promise((resolve, reject) => {
       let attempts = 0;
 
@@ -43,9 +43,13 @@ export function useRewardDistribution() {
   const processBatch = async (
     csvData: CSVRow[],
     startIndex: number,
-    selectedAppId: string
+    selectedId: string,
+    tokenSymbol: string = 'B3TR',
+    isTokenTransfer: boolean = false
   ): Promise<boolean> => {
-    const batch = csvData.slice(startIndex, startIndex + TRANSACTION.BATCH_SIZE);
+    // Use a larger batch size for token transfers
+    const batchSize = isTokenTransfer ? TRANSACTION.TOKEN_BATCH_SIZE : TRANSACTION.BATCH_SIZE;
+    const batch = csvData.slice(startIndex, startIndex + batchSize);
     const batchAmount = batch.reduce((sum, row) => sum + parseFloat(row.amount), 0);
 
     setPendingTransaction({
@@ -56,31 +60,57 @@ export function useRewardDistribution() {
     });
 
     try {
-      const clauses = batch.map(row => ({
-        ...thor.account(TOKEN.CONTRACT_ADDRESS).method({
-          "inputs": [
-            { "name": "appId", "type": "bytes32" },
-            { "name": "amount", "type": "uint256" },
-            { "name": "receiver", "type": "address" },
-            { "name": "reason", "type": "string" }
-          ],
-          "name": "distributeRewardDeprecated",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        })
-          .asClause(
-            selectedAppId,
-            (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString(),
-            row.address,
-            JSON.stringify({ version: 2, description: row.reason })
-          ),
-        comment: `${row.amount} B3TR for ${row.address} (${row.reason})`
-      }));
+      let clauses;
+
+      if (isTokenTransfer) {
+        // ERC20 token transfer
+        clauses = batch.map(row => ({
+          ...thor.account(selectedId).method({
+            "inputs": [
+              { "name": "recipient", "type": "address" },
+              { "name": "amount", "type": "uint256" }
+            ],
+            "name": "transfer",
+            "outputs": [
+              { "name": "", "type": "bool" }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          })
+            .asClause(
+              row.address,
+              (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString()
+            ),
+          comment: `${row.amount} ${tokenSymbol} to ${row.address} (${row.reason})`
+        }));
+      } else {
+        // Original reward distribution
+        clauses = batch.map(row => ({
+          ...thor.account(TOKEN.CONTRACT_ADDRESS).method({
+            "inputs": [
+              { "name": "appId", "type": "bytes32" },
+              { "name": "amount", "type": "uint256" },
+              { "name": "receiver", "type": "address" },
+              { "name": "reason", "type": "string" }
+            ],
+            "name": "distributeRewardDeprecated",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          })
+            .asClause(
+              selectedId,
+              (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString(),
+              row.address,
+              JSON.stringify({ version: 2, description: row.reason })
+            ),
+          comment: `${row.amount} ${tokenSymbol} for ${row.address} (${row.reason})`
+        }));
+      }
 
       const txResponse = await vendor
         .sign('tx', clauses)
-        .comment('Distribute Rewards')
+        .comment(isTokenTransfer ? 'Transfer Tokens' : 'Distribute Rewards')
         .request();
 
       const receipt = await waitForReceipt(txResponse.txid);
@@ -98,7 +128,7 @@ export function useRewardDistribution() {
 
       setProgress(prev => ({
         ...prev,
-        processedAddresses: Math.min(startIndex + TRANSACTION.BATCH_SIZE, csvData.length),
+        processedAddresses: Math.min(startIndex + batchSize, csvData.length),
         processedAmount: batch.reduce((sum, row) => sum + parseFloat(row.amount), prev.processedAmount),
       }));
 
@@ -111,18 +141,41 @@ export function useRewardDistribution() {
     }
   };
 
-  const processAllBatches = async (csvData: CSVRow[], selectedAppId: string, startFromIndex = 0) => {
+  const processAllBatches = async (
+    csvData: CSVRow[],
+    selectedId: string,
+    tokenSymbol: string = 'B3TR',
+    startFromIndex = 0,
+    isTokenTransfer = false
+  ) => {
     setIsProcessing(true);
     setShowSuccess(false);
 
+    // Set initial progress
+    setProgress({
+      processedAddresses: 0,
+      totalAddresses: csvData.length,
+      processedAmount: 0,
+      totalAmount: csvData.reduce((sum, row) => sum + parseFloat(row.amount), 0)
+    });
+
     try {
       let currentIndex = startFromIndex;
+      const batchSize = isTokenTransfer ? TRANSACTION.TOKEN_BATCH_SIZE : TRANSACTION.BATCH_SIZE;
+      
       while (currentIndex < csvData.length) {
-        const success = await processBatch(csvData, currentIndex, selectedAppId);
+        const success = await processBatch(
+          csvData,
+          currentIndex,
+          selectedId,
+          tokenSymbol,
+          isTokenTransfer
+        );
+        
         if (!success) {
           break;
         }
-        currentIndex += TRANSACTION.BATCH_SIZE;
+        currentIndex += batchSize;
       }
 
       if (currentIndex >= csvData.length) {
