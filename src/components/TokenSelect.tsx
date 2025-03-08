@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Token } from '../hooks/useTokens';
+import { getTokenIconUrl } from '../utils/icons';
 import clsx from 'clsx';
 
 interface TokenSelectProps {
@@ -51,7 +52,7 @@ export function TokenSelect({ tokens, value, onChange }: TokenSelectProps) {
             <>
               {selectedToken.icon && (
                 <img
-                  src={`https://vechain.github.io/token-registry/assets/${selectedToken.icon}`}
+                  src={getTokenIconUrl(selectedToken.icon)}
                   alt=""
                   className="w-6 h-6 rounded-full object-cover"
                   onError={(e) => {
@@ -105,7 +106,7 @@ export function TokenSelect({ tokens, value, onChange }: TokenSelectProps) {
               >
                 {token.icon && (
                   <img
-                    src={`https://vechain.github.io/token-registry/assets/${token.icon}`}
+                    src={getTokenIconUrl(token.icon)}
                     alt=""
                     className="w-6 h-6 rounded-full object-cover"
                     onError={(e) => {

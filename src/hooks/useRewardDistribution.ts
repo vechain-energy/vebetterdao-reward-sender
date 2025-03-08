@@ -63,26 +63,38 @@ export function useRewardDistribution() {
       let clauses;
 
       if (isTokenTransfer) {
-        // ERC20 token transfer
-        clauses = batch.map(row => ({
-          ...thor.account(selectedId).method({
-            "inputs": [
-              { "name": "recipient", "type": "address" },
-              { "name": "amount", "type": "uint256" }
-            ],
-            "name": "transfer",
-            "outputs": [
-              { "name": "", "type": "bool" }
-            ],
-            "stateMutability": "nonpayable",
-            "type": "function"
-          })
-            .asClause(
-              row.address,
-              (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString()
-            ),
-          comment: `${row.amount} ${tokenSymbol} to ${row.address} (${row.reason})`
-        }));
+        // Check if this is a VET transfer (native token)
+        if (selectedId === "0x0000000000000000000000000000000000000000") {
+          // Native VET transfer
+          clauses = batch.map(row => ({
+            to: row.address,
+            value: (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString(),
+            data: '0x',
+            comment: `${row.amount} VET to ${row.address}${row.reason ? ` (${row.reason})` : ''}`
+          }));
+        } else {
+          // ERC20 token transfer
+          clauses = batch.map(row => ({
+            ...thor.account(selectedId).method({
+              "inputs": [
+                { "name": "recipient", "type": "address" },
+                { "name": "amount", "type": "uint256" }
+              ],
+              "name": "transfer",
+              "outputs": [
+                { "name": "", "type": "bool" }
+              ],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            })
+              .asClause(
+                row.address,
+                (BigInt(Math.floor(parseFloat(row.amount) * 1e18))).toString()
+              ),
+            // Make reason optional for token transfers
+            comment: `${row.amount} ${tokenSymbol} to ${row.address}${row.reason ? ` (${row.reason})` : ''}`
+          }));
+        }
       } else {
         // Original reward distribution
         clauses = batch.map(row => ({

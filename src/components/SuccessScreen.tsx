@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle2, Download, Users } from 'lucide-react';
 import { StatsCard } from './StatsCard';
 import { TOKEN } from '../config';
+import { getTokenIconUrl } from '../utils/icons';
 
 interface SuccessScreenProps {
   totalAmount: number;
@@ -51,7 +52,7 @@ export function SuccessScreen({ totalAmount, totalUsers, onDownload, tokenSymbol
               <div className="bg-emerald-500/20 rounded-full p-0">
                 {tokenIcon ? (
                   <img 
-                    src={`https://vechain.github.io/token-registry/assets/${tokenIcon}`}
+                    src={getTokenIconUrl(tokenIcon)}
                     alt={tokenSymbol || "B3TR"}
                     className="w-14 h-14"
                     onError={(e) => {

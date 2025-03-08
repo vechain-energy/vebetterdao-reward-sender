@@ -18,6 +18,7 @@ import { useRewardDistribution } from './hooks/useRewardDistribution';
 import { CSVRow } from './types';
 import { useWallet } from '@vechain/dapp-kit-react';
 import { convertIpfsUrl } from './utils/ipfs';
+import { getTokenIconUrl } from './utils/icons';
 import { TOKEN } from './config';
 import clsx from 'clsx';
 import Footer from './components/Footer';
@@ -58,12 +59,12 @@ function App() {
           const data = result.data
             .filter((row: unknown): row is Record<string, string> => {
               const r = row as Record<string, string>;
-              return !!r.address && !!r.amount && !!r.reason;
+              return !!r.address && !!r.amount;
             })
             .map((row: Record<string, string>) => ({
               address: row.address,
               amount: row.amount,
-              reason: row.reason,
+              reason: row.reason || '',
             }));
           setCsvData(data);
         },
@@ -91,12 +92,12 @@ function App() {
           const data = result.data
             .filter((row: unknown): row is Record<string, string> => {
               const r = row as Record<string, string>;
-              return !!r.address && !!r.amount && !!r.reason;
+              return !!r.address && !!r.amount;
             })
             .map((row: Record<string, string>) => ({
               address: row.address,
               amount: row.amount,
-              reason: row.reason,
+              reason: row.reason || '',
             }));
           setCsvData(data);
         },
@@ -106,10 +107,17 @@ function App() {
   };
 
   const handleDownloadExample = () => {
-    const exampleData = [
-      { address: '0x1234...', amount: '100', reason: 'Community contribution' },
-      { address: '0x5678...', amount: '50', reason: 'Bug bounty' },
-    ];
+    // Different examples based on whether a token is selected
+    const exampleData = selectedToken 
+      ? [
+          { address: '0x1234...', amount: '100', reason: 'Optional for token transfers' },
+          { address: '0x5678...', amount: '50' }, // No reason provided
+        ]
+      : [
+          { address: '0x1234...', amount: '100', reason: 'Community contribution' },
+          { address: '0x5678...', amount: '50', reason: 'Bug bounty' },
+        ];
+        
     const csv = Papa.unparse(exampleData);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -227,7 +235,7 @@ function App() {
               <div className="flex items-center gap-3">
                 {selectedToken.icon ? (
                   <img
-                    src={`https://vechain.github.io/token-registry/assets/${selectedToken.icon}`}
+                    src={getTokenIconUrl(selectedToken.icon)}
                     alt=""
                     className="w-10 h-10 rounded-full"
                     onError={(e) => {
@@ -324,7 +332,7 @@ function App() {
                 Choose File
               </label>
               <p className="text-sm text-white/60 mt-4">
-                File should contain columns: address, amount, reason
+                File should contain columns: address, amount{selectedToken ? ' (reason is optional for tokens)' : ', reason'}
               </p>
               <button
                 onClick={handleDownloadExample}
@@ -353,7 +361,7 @@ function App() {
                     <div className="bg-orange-500/20 rounded-full p-0">
                       {selectedToken ? (
                         <img 
-                          src={`https://vechain.github.io/token-registry/assets/${selectedToken.icon}`}
+                          src={getTokenIconUrl(selectedToken.icon)}
                           alt={selectedToken.symbol}
                           className="w-14 h-14"
                           onError={(e) => {
