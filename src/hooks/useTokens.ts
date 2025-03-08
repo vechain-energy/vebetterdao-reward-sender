@@ -17,7 +17,7 @@ const VET_TOKEN: Token = {
     decimals: 18,
     address: "0x0000000000000000000000000000000000000000", // Address(0) for native VET
     desc: "Native token of the VeChain blockchain",
-    icon: `${window.location.origin}/assets/vet-logo.png`,
+    icon: `${window.location.href}/assets/vet-logo.png`,
     totalSupply: "86712634466"
 };
 
