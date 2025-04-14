@@ -16,6 +16,7 @@ export function useApps() {
             id
             name
             metadata {
+              title
               logoUrl
             }
           }
@@ -24,7 +25,10 @@ export function useApps() {
 
       try {
         const data = await request(API.SUBGRAPH_URL, query);
-        setApps(data.apps);
+        setApps(data.apps.map(app => ({
+          ...app,
+          name: app.metadata?.title || app.name
+        })).sort((a, b) => a.name.localeCompare(b.name)));
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch apps'));
       } finally {
