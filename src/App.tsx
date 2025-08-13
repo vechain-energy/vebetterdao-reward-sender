@@ -13,7 +13,7 @@ import { SuccessScreen } from './components/SuccessScreen';
 import { ConnectWallet } from './components/ConnectWallet';
 import { Background } from './components/Background';
 import { useApps } from './hooks/useApps';
-import { useTokens } from './hooks/useTokens';
+import { useTokens, useToken } from './hooks/useTokens';
 import { useRewardDistribution } from './hooks/useRewardDistribution';
 import { CSVRow } from './types';
 import { useWallet } from '@vechain/dapp-kit-react';
@@ -27,6 +27,8 @@ function App() {
   const { account } = useWallet();
   const { apps } = useApps();
   const { tokens } = useTokens();
+  const { token: b3trToken } = useToken(TOKEN.B3TR_ADDRESS);
+
   const {
     progress,
     transactions,
@@ -108,16 +110,16 @@ function App() {
 
   const handleDownloadExample = () => {
     // Different examples based on whether a token is selected
-    const exampleData = selectedToken 
+    const exampleData = selectedToken
       ? [
-          { address: '0x1234...', amount: '100', reason: 'Optional for token transfers' },
-          { address: '0x5678...', amount: '50' }, // No reason provided
-        ]
+        { address: '0x1234...', amount: '100', reason: 'Optional for token transfers' },
+        { address: '0x5678...', amount: '50' }, // No reason provided
+      ]
       : [
-          { address: '0x1234...', amount: '100', reason: 'Community contribution' },
-          { address: '0x5678...', amount: '50', reason: 'Bug bounty' },
-        ];
-        
+        { address: '0x1234...', amount: '100', reason: 'Community contribution' },
+        { address: '0x5678...', amount: '50', reason: 'Bug bounty' },
+      ];
+
     const csv = Papa.unparse(exampleData);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -132,7 +134,7 @@ function App() {
 
   const handleSendRewards = async () => {
     if (!account || (!selectedAppId && !selectedTokenAddress) || csvData.length === 0) return;
-    
+
     setCurrentStep(5);
     setProgress({
       processedAddresses: 0,
@@ -143,32 +145,32 @@ function App() {
     setTransactions([]);
     setPendingTransaction(null);
     setShowSuccess(false);
-    
+
     const appId = selectedTokenAddress || selectedAppId;
     const tokenSymbol = selectedToken?.symbol;
     const isTokenTransfer = !!selectedTokenAddress;
-    
+
     await processAllBatches(csvData, appId, tokenSymbol, 0, isTokenTransfer);
   };
 
   const handleRetryTransaction = async () => {
     if (!pendingTransaction) return;
-    
+
     const appId = selectedTokenAddress || selectedAppId;
     const tokenSymbol = selectedToken?.symbol;
     const isTokenTransfer = !!selectedTokenAddress;
-    
+
     await processAllBatches(csvData, appId, tokenSymbol, pendingTransaction.startIndex, isTokenTransfer);
   };
 
   const handleDownloadCSV = () => {
-    const processedRows = transactions.flatMap(tx => 
+    const processedRows = transactions.flatMap(tx =>
       tx.rows.map(rowIndex => ({
         ...csvData[rowIndex],
         transaction: `https://vechainstats.com/transactions/${tx.id}`
       }))
     );
-    
+
     const csv = Papa.unparse(processedRows);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -213,7 +215,7 @@ function App() {
   return (
     <div className="bg-gradient-dark">
       <Background />
-      <div 
+      <div
         className="min-h-screen p-8 relative"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -297,7 +299,7 @@ function App() {
                   }}
                 />
               </div>
-              
+
               <div className="pt-4 border-t border-white/10">
                 <h3 className="text-white text-lg font-semibold mb-2">Select Token</h3>
                 <p className="text-white/70 mb-4 text-sm">Or choose a token to distribute</p>
@@ -360,7 +362,7 @@ function App() {
                   icon={
                     <div className="bg-orange-500/20 rounded-full p-0">
                       {selectedToken ? (
-                        <img 
+                        <img
                           src={getTokenIconUrl(selectedToken.icon)}
                           alt={selectedToken.symbol}
                           className="w-14 h-14"
@@ -369,10 +371,13 @@ function App() {
                           }}
                         />
                       ) : (
-                        <img 
-                          src={TOKEN.B3TR_ICON_URL}
+                        <img
+                          src={b3trToken ? getTokenIconUrl(b3trToken.icon) : '/assets/vet-logo.png'}
                           alt="B3TR"
                           className="w-14 h-14"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
                         />
                       )}
                     </div>

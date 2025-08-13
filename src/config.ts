@@ -7,7 +7,7 @@ export const NETWORK = {
 
 // Token Configuration
 export const TOKEN = {
-  B3TR_ICON_URL: 'https://vechain.github.io/token-registry/assets/3d55edb42b09a634f7f2f26756a02571de901a5b.png',
+  B3TR_ADDRESS: '0x5ef79995FE8a89e0812330E4378eB2660ceDe699',
   CONTRACT_ADDRESS: '0x6Bee7DDab6c99d5B2Af0554EaEA484CE18F52631',
 } as const;
 

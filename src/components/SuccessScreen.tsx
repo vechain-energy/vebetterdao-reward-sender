@@ -1,8 +1,9 @@
 import React from 'react';
 import { CheckCircle2, Download, Users } from 'lucide-react';
 import { StatsCard } from './StatsCard';
-import { TOKEN } from '../config';
 import { getTokenIconUrl } from '../utils/icons';
+import { useToken } from '../hooks/useTokens';
+import { TOKEN } from '../config';
 
 interface SuccessScreenProps {
   totalAmount: number;
@@ -13,6 +14,8 @@ interface SuccessScreenProps {
 }
 
 export function SuccessScreen({ totalAmount, totalUsers, onDownload, tokenSymbol, tokenIcon }: SuccessScreenProps) {
+  const { token: b3trToken } = useToken(TOKEN.B3TR_ADDRESS);
+  
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 backdrop-blur-lg p-8">
       <div className="absolute inset-0 bg-success-pattern opacity-5" />
@@ -70,9 +73,21 @@ export function SuccessScreen({ totalAmount, totalUsers, onDownload, tokenSymbol
                   />
                 ) : (
                   <img 
-                    src={TOKEN.B3TR_ICON_URL} 
+                    src={b3trToken ? getTokenIconUrl(b3trToken.icon) : '/assets/vet-logo.png'} 
                     alt={tokenSymbol || "B3TR"}
                     className="w-14 h-14"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('div');
+                        fallback.className = "w-14 h-14 flex items-center justify-center";
+                        const icon = document.createElement('div');
+                        icon.className = "w-10 h-10 text-emerald-400";
+                        parent.appendChild(fallback);
+                        fallback.appendChild(icon);
+                      }
+                    }}
                   />
                 )}
               </div>

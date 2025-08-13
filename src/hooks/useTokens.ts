@@ -48,4 +48,20 @@ export function useTokens() {
     }, []);
 
     return { tokens, loading, error };
+}
+
+/**
+ * Gets a specific token from the tokens list by contract address or symbol
+ * @param identifier The contract address or symbol of the token to find
+ * @returns The token or undefined if not found
+ */
+export function useToken(identifier: string) {
+    const { tokens, loading, error } = useTokens();
+
+    const token = tokens.find(token => 
+        token.address.toLowerCase() === identifier.toLowerCase() ||
+        token.symbol.toLowerCase() === identifier.toLowerCase()
+    );
+
+    return { token, loading, error };
 } 
